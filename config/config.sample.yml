@@ -83,6 +83,8 @@ notify:
     info:
       channelId: channel id
       apiToken: api token
+      url: mattermost url
     error:
       channelId: channel id
       apiToken: api token
+      url: mattermost url
