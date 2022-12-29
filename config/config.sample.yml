@@ -1,0 +1,69 @@
+elasticsearch:
+  url: http://10.10.40.120:9200
+  username:
+  password:
+  apiKey:
+  tasks:
+  - repository: consent-1
+    indexes:
+      - consent-1
+    snapshotName: consent-1
+    takenBy: cron
+    takenBecause: daily backup
+    timeoutByMinutes: 180
+    retention:
+      expireAfter: 30
+      minCount: 5
+      maxCount: 50
+  - repository: recipient-1
+    indexes:
+      - recipient-1
+    snapshotName: recipient-1
+    takenBy: cron
+    takenBecause: daily backup
+    timeoutByMinutes: 180
+    retention:
+      expireAfter: 30
+      minCount: 5
+      maxCount: 50
+  - repository: history-1
+    indexes:
+      - history-1
+    snapshotName: history-1
+    takenBy: cron
+    takenBecause: daily backup
+    timeoutByMinutes: 180
+    retention:
+      expireAfter: 30
+      minCount: 5
+      maxCount: 50
+  - repository: audit-logs-4
+    indexes:
+      - audit-logs-4
+    snapshotName: audit-logs-4
+    takenBy: cron
+    takenBecause: daily backup
+    timeoutByMinutes: 180
+    retention:
+      expireAfter: 30
+      minCount: 5
+      maxCount: 50
+  - repository: other
+    indexes:
+      - daily-history-*
+      - changesmetadata
+      - iys-operation-logs
+      - info
+      - closed-recipients
+    snapshotName: other
+    takenBy: cron
+    takenBecause: daily backup
+    timeoutByMinutes: 180
+    retention:
+      expireAfter: 30
+      minCount: 5
+      maxCount: 50
+mattermost:
+  channelId: k7z8p13hmpfgpgfya6118g153e
+  apiToken: fj11m54hqf86jfaey5yu7eye1a
+  url: https://chat.vkk.io
