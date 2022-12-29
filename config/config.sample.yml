@@ -63,7 +63,26 @@ elasticsearch:
       expireAfter: 30
       minCount: 5
       maxCount: 50
-mattermost:
-  channelId: k7z8p13hmpfgpgfya6118g153e
-  apiToken: fj11m54hqf86jfaey5yu7eye1a
-  url: https://chat.vkk.io
+notify:
+  email:
+    enabled: true
+    info:
+      smtpHost: smtp.gmail.com
+      smtpPort: 587
+      from: sender@example.com
+      password: 123456
+      to: recipient@example.com
+    error:
+      smtpHost: smtp.gmail.com
+      smtpPort: 587
+      from: sender@example.com
+      password: 123456
+      to: recipient@example.com
+  mattermost:
+    enabled: true
+    info:
+      channelId: channel id
+      apiToken: api token
+    error:
+      channelId: channel id
+      apiToken: api token

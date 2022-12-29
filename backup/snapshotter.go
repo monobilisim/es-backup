@@ -61,7 +61,7 @@ type formattedStats struct {
 		Size      string `yaml:"size"`
 	} `yaml:"incremental"`
 	Total struct {
-		FileCount int `yaml:"file_count"`
+		FileCount int    `yaml:"file_count"`
 		Size      string `yaml:"size"`
 	} `yaml:"total"`
 	StartTime string `yaml:"start_time"`
@@ -96,7 +96,16 @@ func NewSnapshotter(params *config.Params) (s *Snapshotter) {
 			"Snapshot alma işleminde hata oluştu.",
 			"Elasticsearch client oluşturulamadı:",
 			err.Error(),
+			true,
 		)
+
+		notify.Email(
+			s.p,
+			"Snapshot alma işleminde hata oluştu",
+			"Elasticsearch client oluşturulamadı: "+err.Error(),
+			true,
+		)
+
 		return
 	}
 	s.c = c
@@ -108,9 +117,9 @@ func (s *Snapshotter) Snapshot() {
 TASKS:
 	for _, task := range s.p.Elasticsearch.Tasks {
 		if len(task.Indexes) == 0 {
-			s.m.Notify("Elasticsearch için `"+task.Repository+"` repository'sine tüm index'ler için snapshot alma işlemi başladı.", "", "")
+			s.m.Notify("Elasticsearch için `"+task.Repository+"` repository'sine tüm index'ler için snapshot alma işlemi başladı.", "", "", false)
 		} else {
-			s.m.Notify("Elasticsearch için `"+task.Repository+"` repository'sine `"+strings.Join(task.Indexes, ",")+"` index'leri için snapshot alma işlemi başladı.", "", "")
+			s.m.Notify("Elasticsearch için `"+task.Repository+"` repository'sine `"+strings.Join(task.Indexes, ",")+"` index'leri için snapshot alma işlemi başladı.", "", "", false)
 		}
 
 		vrReq := esapi.SnapshotVerifyRepositoryRequest{
@@ -122,7 +131,9 @@ TASKS:
 				"Snapshot alma işleminde hata oluştu.",
 				"`"+task.Repository+"` repository'si için doğrulama isteği Elasticsearch API'ına gönderilemedi:",
 				err.Error(),
+				true,
 			)
+			notify.Email(s.p, "Snapshot alma işleminde hata oluştu.", task.Repository+" repository'si için doğrulama isteği Elasticsearch API'ına gönderilemedi: "+err.Error(), true)
 			continue TASKS
 		}
 		if res.IsError() {
@@ -130,7 +141,9 @@ TASKS:
 				"Snapshot alma işleminde hata oluştu.",
 				"`"+task.Repository+"` repository'si için doğrulama isteğine Elasticsearch API'ından 2XX harici yanıt geldi:",
 				res.String(),
+				true,
 			)
+			notify.Email(s.p, "Snapshot alma işleminde hata oluştu.", task.Repository+" repository'si için doğrulama isteğine Elasticsearch API'ından 2XX harici yanıt geldi: "+res.String(), true)
 			continue TASKS
 		}
 
@@ -153,7 +166,9 @@ TASKS:
 				"Snapshot alma işleminde hata oluştu.",
 				"Snapshot oluşturma isteği Elasticsearch API'ına gönderilemedi:",
 				err.Error(),
+				true,
 			)
+			notify.Email(s.p, "Snapshot alma işleminde hata oluştu.", "Snapshot oluşturma isteği Elasticsearch API'ına gönderilemedi:"+err.Error(), true)
 			continue TASKS
 		}
 		if res.IsError() {
@@ -161,7 +176,9 @@ TASKS:
 				"Snapshot alma işleminde hata oluştu.",
 				"Snapshot oluşturma isteğine Elasticsearch API'ından 2XX harici yanıt geldi:",
 				res.String(),
+				true,
 			)
+			notify.Email(s.p, "Snapshot alma işleminde hata oluştu.", "Snapshot oluşturma isteğine Elasticsearch API'ından 2XX harici yanıt geldi:" + res.String(), true)
 			continue TASKS
 		}
 
@@ -175,7 +192,9 @@ TASKS:
 					"Snapshot alma işleminde hata oluştu.",
 					"Snapshot oluşturma isteği sonrası kontrol, zaman aşımına uğradı.",
 					"Zaman aşımı süresi: "+strconv.Itoa(task.TimeoutByMinutes)+" dakika",
+					true,
 				)
+				notify.Email(s.p, "Snapshot alma işleminde hata oluştu.", "Snapshot oluşturma isteği sonrası kontrol, zaman aşımına uğradı.", true)
 				cancel()
 				continue TASKS
 			default:
@@ -212,53 +231,15 @@ TASKS:
 						"Elasticsearch için snapshot alma işlemi sona erdi.",
 						"Snapshot ayrıntıları:",
 						fs,
+						false,
 					)
+					notify.Email(s.p, "Elasticsearch için snapshot alma işlemi sona erdi.", "Snapshot ayrıntıları: "+fs, false)
+
 					continue TASKS
 				}
 			}
 		}
 	}
-}
-
-func (s *Snapshotter) Prune() {
-	/*
-		s.m.Notify("Elasticsearch için `"+s.p.Elasticsearch.Repository+"` repository'sindeki eski snapshot'ları kaldırma işlemi başladı.", "", "")
-
-		sReq := esapi.CatSnapshotsRequest{
-			Repository: []string{s.p.Elasticsearch.Repository},
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.p.Elasticsearch.TimeoutByMinutes)*time.Minute)
-		defer cancel()
-
-		res, err := sReq.Do(ctx, s.c)
-		if err != nil {
-			s.m.Notify(
-				"Eski snapshot'ları kaldırma işleminde hata oluştu.",
-				"Snapshot'lar listenemedi.",
-				err.Error())
-			return
-		}
-
-		srb := new(snapshotsResponseBody)
-		err = yaml.NewDecoder(res.Body).Decode(&srb)
-		if err != nil {
-			s.m.Notify(
-				"Eski snapshot'ları kaldırma işleminde hata oluştu.",
-				"Snapshot listesi struct'a çevrilemedi.",
-				err.Error())
-			return
-		}
-
-		total := len(srb.Snapshots)
-		overMax := total - s.p.Elasticsearch.Retention.MaxCount
-
-		for i, snapshot := range srb.Snapshots {
-			if i < overMax && total > s.p.Elasticsearch.Retention.MinCount {
-				_ = snapshot
-			}
-		}
-	*/
 }
 
 func formatStats(yml string) (string, error) {
@@ -279,7 +260,7 @@ func formatStats(yml string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	st := time.Unix(0, int64(s.StartTimeInMillis) * int64(time.Millisecond)).In(loc)
+	st := time.Unix(0, int64(s.StartTimeInMillis)*int64(time.Millisecond)).In(loc)
 	fs.StartTime = st.Format("2006-01-02 15:04:05.000")
 
 	fs.Time = durafmt.Parse(time.Duration(s.TimeInMillis) * time.Millisecond).String()

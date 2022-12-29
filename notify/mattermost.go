@@ -32,13 +32,29 @@ func NewMattermost(params *config.Params) (m *Mattermost) {
 	return
 }
 
-func (m *Mattermost) Notify(message string, pretext string, text string) {
+func (m *Mattermost) Notify(message string, pretext string, text string, isError bool) {
+	if !m.p.Notify.Mattermost.Enabled {
+		return
+	}
+
 	if m.p.Hostname != "" {
 		message = "**[" + m.p.Hostname + "]** " + message
 	}
 
+	var channelID, apiToken, url string
+
+	if isError {
+		channelID = m.p.Notify.Mattermost.Error.ChannelId
+		apiToken = m.p.Notify.Mattermost.Error.ApiToken
+		url = m.p.Notify.Mattermost.Error.Url+"/api/v4/posts"
+	} else {
+		channelID = m.p.Notify.Mattermost.Info.ChannelId
+		apiToken = m.p.Notify.Mattermost.Info.ApiToken
+		url = m.p.Notify.Mattermost.Info.Url+"/api/v4/posts"
+	}
+
 	data := Payload{
-		ChannelID: m.p.Mattermost.ChannelId,
+		ChannelID: channelID,
 		Message:   message,
 	}
 
@@ -61,13 +77,13 @@ func (m *Mattermost) Notify(message string, pretext string, text string) {
 	}
 	body := bytes.NewReader(payloadBytes)
 
-	req, err := http.NewRequest("POST", m.p.Mattermost.Url+"/api/v4/posts", body)
+	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		log.Printf("Error creating POST request for Mattermost: %q", err.Error())
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+m.p.Mattermost.ApiToken)
+	req.Header.Set("Authorization", "Bearer "+apiToken)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

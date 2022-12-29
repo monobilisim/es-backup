@@ -27,12 +27,33 @@ type Params struct {
 			}
 		}
 	}
-	Mattermost struct{
-		Url string
-		ChannelId string
-		ApiToken string
+	Notify struct{
+		Email struct{
+			Enabled bool
+			Info EmailConfig
+			Error EmailConfig
+		}
+		Mattermost struct{
+			Enabled bool
+			Info MattermostConfig
+			Error MattermostConfig
+		}
 	}
 	Hostname string
+}
+
+type MattermostConfig struct {
+	Url string
+	ChannelId string
+	ApiToken string
+}
+
+type EmailConfig struct {
+	SmtpHost string
+	SmtpPort int
+	From string
+	Password string
+	To string
 }
 
 func NewParams() (p *Params) {
